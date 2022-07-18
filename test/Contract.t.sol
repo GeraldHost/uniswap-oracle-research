@@ -72,12 +72,17 @@ contract UniswapV3Oracle is Test {
     uint32[] memory secondsAgos = new uint32[](2);
     secondsAgos[0] = anchorPeriod;
 
+    uint256 daiEthPrice;
+    uint256 daiBtcPrice;
+    uint256 btcEthPrice;
+
     { // DAI:ETH
       // Price of ETH denominated in DAI
       bool zeroToOne = false;
       (int56[] memory tickCumulatives, ) = IUniswapV3Pool(DAI_ETH).observe(secondsAgos);
       uint256 price = priceFromTick(zeroToOne, 1e18, tickCumulatives);
       emit log_uint(price);
+      daiEthPrice = price;
     }
 
     { // WBTC:ETH
@@ -86,6 +91,7 @@ contract UniswapV3Oracle is Test {
       (int56[] memory tickCumulatives, ) = IUniswapV3Pool(WBTC_ETH).observe(secondsAgos);
       uint256 price = priceFromTick(zeroToOne, 1e8, tickCumulatives);
       emit log_uint(price);
+      btcEthPrice = price;
     }
 
     { // WBTC:DAI
@@ -94,6 +100,13 @@ contract UniswapV3Oracle is Test {
       (int56[] memory tickCumulatives, ) = IUniswapV3Pool(WBTC_DAI).observe(secondsAgos);
       uint256 price = priceFromTick(zeroToOne, 1e8, tickCumulatives);
       emit log_uint(price);
+      daiBtcPrice = price;
     }
+
+    uint256 crossOverPrice = daiBtcPrice * 1e18 / btcEthPrice;
+
+    uint256 avePrice = (crossOverPrice + daiEthPrice) / 2;
+    
+    emit log_uint(avePrice);
   }
 }
