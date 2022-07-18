@@ -21,35 +21,35 @@ library FixedPoint96 {
 contract UniswapV3Oracle is Test {
   uint256 public constant EXP_SCALE = 1e18;
 
-   struct AssetCache {
-      address underlying;
+  struct AssetCache {
+    address underlying;
 
-      uint112 totalBalances;
-      uint144 totalBorrows;
+    uint112 totalBalances;
+    uint144 totalBorrows;
 
-      uint96 reserveBalance;
+    uint96 reserveBalance;
 
-      uint interestAccumulator;
+    uint interestAccumulator;
 
-      uint40 lastInterestAccumulatorUpdate;
-      uint8 underlyingDecimals;
-      uint32 interestRateModel;
-      int96 interestRate;
-      uint32 reserveFee;
-      uint16 pricingType;
-      uint32 pricingParameters;
+    uint40 lastInterestAccumulatorUpdate;
+    uint8 underlyingDecimals;
+    uint32 interestRateModel;
+    int96 interestRate;
+    uint32 reserveFee;
+    uint16 pricingType;
+    uint32 pricingParameters;
 
-      uint poolSize; // result of calling balanceOf on underlying (in external units)
+    uint poolSize; // result of calling balanceOf on underlying (in external units)
 
-      uint underlyingDecimalsScaler;
-      uint maxExternalAmount;
+    uint underlyingDecimalsScaler;
+    uint maxExternalAmount;
   }
 
   address public constant DAI_ETH = address(0x60594a405d53811d3BC4766596EFD80fd545A270);
   address public constant WBTC_ETH = address(0xCBCdF9626bC03E24f779434178A73a0B4bad62eD);
   address public constant WBTC_DAI = address(0x391E8501b626C623d39474AfcA6f9e46c2686649);
 
-  uint32 public constant anchorPeriod = 3600;
+  uint32 public constant anchorPeriod = 30 minutes;
 
   function priceFromTick(bool zeroToOne, uint256 scale, int56[] memory tickCumulatives) public view returns (uint256) {
     int56 anchorPeriodI = int56(uint56(anchorPeriod));
@@ -68,6 +68,10 @@ contract UniswapV3Oracle is Test {
   }
 
   function testSlot() public {
+    // Get the 30 minute (anchorPeriod) TWAP tick price of Uniswap V3 pools
+    // DAI:ETH, DAI:BTC, ETH:BTC and use that to get an ETH price based on
+    // all three pools. 1. get the ETH price in DAI, 2. get the BTC price in ETH
+    // 3. get the BTC price in DAI. 4. Get ETH price in BTC:DAI.
 
     uint32[] memory secondsAgos = new uint32[](2);
     secondsAgos[0] = anchorPeriod;
@@ -104,7 +108,6 @@ contract UniswapV3Oracle is Test {
     }
 
     uint256 crossOverPrice = daiBtcPrice * 1e18 / btcEthPrice;
-
     uint256 avePrice = (crossOverPrice + daiEthPrice) / 2;
     
     emit log_uint(avePrice);
